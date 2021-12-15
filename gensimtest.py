@@ -6,6 +6,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 from gensim.test.utils import datapath
 from gensim import utils
 
+
 class MyCorpus:
     """AWOOGA"""
 
@@ -13,6 +14,7 @@ class MyCorpus:
         corpus_path = datapath('lee_background.cor')
         for line in open(corpus_path):
             yield utils.simple_preprocess(line)
+
 
 import gensim.models
 
