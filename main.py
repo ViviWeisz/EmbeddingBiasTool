@@ -3,7 +3,9 @@ import sys
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QApplication, QMainWindow, QGridLayout, QGroupBox, QLabel, QWidget, QLineEdit, \
-    QPushButton, QTabWidget, QVBoxLayout
+    QPushButton, QTabWidget, QVBoxLayout, QFileDialog
+
+loaded_models = []
 
 
 # Uses QMainWindow to create the main window
@@ -28,11 +30,10 @@ class MainWindow(QMainWindow):
         main_layout = QGridLayout()
 
         # Three Boxes to select different models
-        self.create_model_selection_widgets()
 
-        main_layout.addWidget(self._model_selection_widget_one, 0, 0)
-        main_layout.addWidget(self._model_selection_widget_two, 0, 1)
-        main_layout.addWidget(self._model_selection_widget_three, 0, 2)
+        main_layout.addWidget(ModelBrowserWidget(self, 0), 0, 0)
+        main_layout.addWidget(ModelBrowserWidget(self, 1), 0, 1)
+        main_layout.addWidget(ModelBrowserWidget(self, 2), 0, 2)
 
         # Tab Widget for different analysis types
         tab_widget = QTabWidget()
@@ -56,37 +57,63 @@ class MainWindow(QMainWindow):
         geometry = self.screen().availableGeometry()
         self.setBaseSize(geometry.width() * 0.8, geometry.height() * 0.7)
 
-
     # Slots
     @Slot()
     def exit_app(self, checked):
         QApplication.quit()
 
-    def create_model_selection_widgets(self):
-        self._model_selection_widget_one = self._create_selection_widget("First")
-        self._model_selection_widget_two = self._create_selection_widget("Second")
-        self._model_selection_widget_three = self._create_selection_widget("Third")
 
-    def _create_selection_widget(self, name):
-        selection_widget = QGroupBox(f"{name} Model")
-        layout = QGridLayout()
+class ModelBrowserWidget(QGroupBox):
+    name = ["First", "Second", "Third"]
 
-        filepath_input = QLineEdit("File Path")
-        filepath_button = QPushButton("Browse")
-        title_input = QLineEdit("Name")
-        load_button = QPushButton("Load")
-        status_label = QLabel("Status")
+    def __init__(self, parent: QWidget, id):
+        super().__init__(parent)
+        self.id = id
 
-        layout.addWidget(filepath_input, 0, 0)
-        layout.addWidget(filepath_button, 0, 1)
-        layout.addWidget(title_input, 1, 0)
-        layout.addWidget(load_button, 1, 1)
-        layout.addWidget(status_label, 2, 0, 1, 2)
+        self.setTitle(f"{self.name[id]} Model")
+        self.layout = QGridLayout()
 
-        selection_widget.setLayout(layout)
-        return selection_widget
+        self.filepath_input = QLineEdit()
+        self.filepath_input.setPlaceholderText("File Path")
+        self.filepath_button = QPushButton("Browse")
+        self.title_input = QLineEdit()
+        self.title_input.setPlaceholderText("Model Name")
+        self.load_button = QPushButton("Load")
+        self.status_label = QLabel("Status")
 
 
+        self.filepath_button.clicked.connect(self.browse_file)
+        self.load_button.clicked.connect(self.load_model)
+
+        self.layout.addWidget(self.filepath_input, 0, 0)
+        self.layout.addWidget(self.filepath_button, 0, 1)
+        self.layout.addWidget(self.title_input, 1, 0)
+        self.layout.addWidget(self.load_button, 1, 1)
+        self.layout.addWidget(self.status_label, 2, 0, 1, 2)
+
+        self.setLayout(self.layout)
+
+    @Slot()
+    def browse_file(self):
+        dialog = QFileDialog(self)
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setDirectory(r"D:\Uni\Bachelor\Datasets")
+        # dialog.setNameFilters(["Word2Vec Models (*.model)", "Glove Models (*.txt)"])
+        dialog.setNameFilter("Models (*.model *.txt *.npy *.bin)")
+        if dialog.exec():
+            self.filepath_input.setText(dialog.selectedFiles()[0])
+            print("FILE: " + dialog.selectedFiles()[0])
+
+    # TODO: Implement Model loading in a different module and then add the loaded model to a list of tuples
+    #  with names + model
+    @Slot()
+    def load_model(self):
+        loaded_models.insert(self.id, "Test" + str(self.id))
+        print(loaded_models)
+
+
+# TODO: Implement different types of analysis: Association, Analogy, Bias score,
+#  https://dl.acm.org/doi/pdf/10.1145/3351095.3372843#page=12&zoom=100,76,805
 class FirstAnalysisTab(QWidget):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
