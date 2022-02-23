@@ -2,10 +2,12 @@ import sys
 import time
 
 from contextlib import contextmanager
-from PySide6.QtCore import Slot, Qt
+
+from PySide6 import QtCore
+from PySide6.QtCore import Slot, Qt, QAbstractTableModel, QModelIndex
 from PySide6.QtGui import QAction, QKeySequence, QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QGridLayout, QGroupBox, QLabel, QWidget, QLineEdit, \
-    QPushButton, QTabWidget, QVBoxLayout, QFileDialog, QStatusBar
+    QPushButton, QTabWidget, QVBoxLayout, QFileDialog, QStatusBar, QListView, QTableView
 
 loaded_models = []
 
@@ -139,10 +141,51 @@ class ModelBrowserWidget(QGroupBox):
 class FirstAnalysisTab(QWidget):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
-        placeholder_label = QLabel("Placeholder Label")
+        model = TestTableModel(self, ["Test 1", "test 2"], ["Wa wa", "Wa We"], "test")
+
+        data_view = QTableView()
+        data_view.setModel(model)
         main_layout = QVBoxLayout()
-        main_layout.addWidget(placeholder_label)
+        main_layout.addWidget(data_view)
         self.setLayout(main_layout)
+
+
+class TestTableModel(QAbstractTableModel):
+    def __init__(self, parent: QWidget, horizontal_header, vertical_header, data):
+        super().__init__(parent)
+        self.test_data = [[0, 1], [2, 3], [4, 5], [6, 7]]
+        self.raw_data = data
+        self.horizontal_header = horizontal_header
+        self.vertical_header = vertical_header
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self.test_data)
+
+    def columnCount(self, parent=QModelIndex()):
+        return len(self.test_data[0])
+
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            row = index.row()
+            column = index.column()
+            return '{0}'.format(self.test_data[row][column])
+        else:
+            return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                if section < len(self.horizontal_header):
+                    return self.horizontal_header[section]
+                else:
+                    return None
+            elif orientation == Qt.Vertical:
+                if section < len(self.vertical_header):
+                    return self.vertical_header[section]
+                else:
+                    return None
+            return None
+        return None
 
 
 class SecondAnalysisTab(QWidget):
