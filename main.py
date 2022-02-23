@@ -1,9 +1,11 @@
 import sys
+import time
 
-from PySide6.QtCore import Slot
-from PySide6.QtGui import QAction, QKeySequence
+from contextlib import contextmanager
+from PySide6.QtCore import Slot, Qt
+from PySide6.QtGui import QAction, QKeySequence, QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QGridLayout, QGroupBox, QLabel, QWidget, QLineEdit, \
-    QPushButton, QTabWidget, QVBoxLayout, QFileDialog
+    QPushButton, QTabWidget, QVBoxLayout, QFileDialog, QStatusBar
 
 loaded_models = []
 
@@ -38,8 +40,8 @@ class MainWindow(QMainWindow):
         # Tab Widget for different analysis types
         tab_widget = QTabWidget()
         tab_widget.addTab(FirstAnalysisTab(self), "First Analysis")
-        tab_widget.addTab(SecondAnalysisTab(self), "First Analysis")
-        tab_widget.addTab(ThirdAnalysisTab(self), "First Analysis")
+        tab_widget.addTab(SecondAnalysisTab(self), "Second Analysis")
+        tab_widget.addTab(ThirdAnalysisTab(self), "Third Analysis")
 
         main_layout.addWidget(tab_widget, 1, 0, 3, 0)
 
@@ -51,26 +53,54 @@ class MainWindow(QMainWindow):
 
         # Status Bar
         self.status = self.statusBar()
-        self.status.showMessage("Test status")
+        self.status.showMessage("Ready")
 
         # Window Dimensions
         geometry = self.screen().availableGeometry()
-        self.setBaseSize(geometry.width() * 0.8, geometry.height() * 0.7)
+        self.setMinimumSize(geometry.width() * 0.6, geometry.height() * 0.6)
 
     # Slots
+    # TODO: Implement Model loading in a different module and then add the loaded model to a list of tuples
+    #  with names + model
+    @Slot()
+    def load_model(self, model_path, _id):
+        with self.wait_context():
+            loaded_models.insert(_id, "Test" + str(_id))
+            time.sleep(5)
+            pass
+        print(loaded_models)
+
     @Slot()
     def exit_app(self, checked):
         QApplication.quit()
+
+    # Methods
+    def change_status(self, _status):
+        self.status.showMessage(_status)
+
+    @contextmanager
+    def wait_context(self):
+        try:
+            QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+
+            MainWindow.change_status(self, "Loading...")
+            QApplication.processEvents()
+
+            yield
+        finally:
+            QApplication.restoreOverrideCursor()
+            MainWindow.change_status(self, "Done!")
 
 
 class ModelBrowserWidget(QGroupBox):
     name = ["First", "Second", "Third"]
 
-    def __init__(self, parent: QWidget, id):
+    def __init__(self, parent: MainWindow, _id):
         super().__init__(parent)
-        self.id = id
+        self.id = _id
+        self.parent = parent
 
-        self.setTitle(f"{self.name[id]} Model")
+        self.setTitle(f"{self.name[_id]} Model")
         self.layout = QGridLayout()
 
         self.filepath_input = QLineEdit()
@@ -81,9 +111,8 @@ class ModelBrowserWidget(QGroupBox):
         self.load_button = QPushButton("Load")
         self.status_label = QLabel("Status")
 
-
         self.filepath_button.clicked.connect(self.browse_file)
-        self.load_button.clicked.connect(self.load_model)
+        self.load_button.clicked.connect(lambda: self.parent.load_model(self.filepath_input, self.id))
 
         self.layout.addWidget(self.filepath_input, 0, 0)
         self.layout.addWidget(self.filepath_button, 0, 1)
@@ -103,13 +132,6 @@ class ModelBrowserWidget(QGroupBox):
         if dialog.exec():
             self.filepath_input.setText(dialog.selectedFiles()[0])
             print("FILE: " + dialog.selectedFiles()[0])
-
-    # TODO: Implement Model loading in a different module and then add the loaded model to a list of tuples
-    #  with names + model
-    @Slot()
-    def load_model(self):
-        loaded_models.insert(self.id, "Test" + str(self.id))
-        print(loaded_models)
 
 
 # TODO: Implement different types of analysis: Association, Analogy, Bias score,
