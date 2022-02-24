@@ -148,15 +148,24 @@ class ModelBrowserWidget(QGroupBox):
 # TODO: Implement different types of analysis: Association, Analogy, Bias score,
 #  https://dl.acm.org/doi/pdf/10.1145/3351095.3372843#page=12&zoom=100,76,805
 class FirstAnalysisTab(QWidget):
-    def __init__(self, parent: QWidget):
+    def __init__(self, parent: MainWindow):
         super().__init__(parent)
-        model = BaseTableModel(self, ["Test 1", "test 2"], ["Wa wa", "Wa We"], "test")
+        self.parent = parent
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.compute_data)
 
+        self.main_layout = QVBoxLayout()
+        self.main_layout.addWidget(self.start_button)
+        self.setLayout(self.main_layout)
+
+    @Slot()
+    def compute_data(self):
+        model = BiasAnalyserCore.PandasTableModel(self, self.parent.bias_analyser.compute_association_model("strong")[0])
         data_view = QTableView()
         data_view.setModel(model)
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(data_view)
-        self.setLayout(main_layout)
+        self.main_layout.addWidget(data_view)
+        self.setLayout(self.main_layout)
+
 
 
 class SecondAnalysisTab(QWidget):
