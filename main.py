@@ -76,6 +76,7 @@ class MainWindow(QMainWindow):
     def load_model(self, model_path, model_name, model_status, _id):
         with self.wait_context():
             model_status.setText("Loading Model")
+            QApplication.processEvents()
             self.bias_analyser.load_model(_id, model_name.text(), model_path.text())
             model_status.setText("Loaded {0} Model".format(model_name.text()))
             pass
