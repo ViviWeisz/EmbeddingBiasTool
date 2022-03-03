@@ -18,25 +18,51 @@ from PySide6.QtWidgets import QWidget
 #    r'D:\Uni\Bachelor\Datasets\GoogleNews-vectors-negative300.bin', binary=True))
 # print("Finished Loading")
 
+
+def compute_association(model, word):
+    data = pd.DataFrame(model.most_similar(positive=word), columns=[[word, 'Similarity']])
+    return data
+
+
 class AnalyserCore:
     def __init__(self):
         self.model_array = []
 
     # TODO: Think of alternatives for fast loading and implement loading of different file types besides word2vec.txt
-    def load_model(self, index, name, path):
-        # model = KeyedVectors.load_word2vec_format(r'D:\Uni\Bachelor\Datasets\GoogleNews-vectors-negative300.bin',
-        #                                           binary=True)
-        # Loads with a limit of 50,000 vectors to reduce load times during testing
-        model = KeyedVectors.load_word2vec_format(path, binary=False, limit=100000)
-        if index < len(self.model_array):
-            del self.model_array[index]
-        self.model_array.insert(index, (name, model))
+    # Returns True if successful and a Message to display on Error
+    def load_model(self, index, name, path, model_type):
+        _limit = 50000
+        try:
+            # Word2Vec Plaintext
+            if model_type == 0:
+                # Loads with a limit of 50,000 vectors to reduce load times during testing
+                model = KeyedVectors.load_word2vec_format(path, binary=False, limit=_limit)
+            # Word2Vec Binary
+            elif model_type == 1:
+                model = KeyedVectors.load_word2vec_format(path, binary=True, limit=_limit)
+            # Glove Plaintext
+            elif model_type == 2:
+                output_path = path.removesuffix(".txt") + ".w2v.txt"
+                glove2word2vec(path, output_path)
+                model = KeyedVectors.load_word2vec_format(output_path, binary=False, limit=_limit)
+            else:
+                print("State 1")
+                return "Unimplemented Model Type"
+            if index < len(self.model_array):
+                del self.model_array[index]
+            self.model_array.insert(index, (name, model))
+        except ValueError:
+            return "Model loading failed. The reason is probably an incorrect model type."
+        except:
+            return "Model loading failed, for unknown reasons."
+        else:
+            return True
 
-    def compute_association_model(self, word):
+    def compute_association_models(self, word):
         table_models = []
         for model in self.model_array:
-            data = pd.DataFrame(model[1].most_similar(positive=word), columns=[[word, 'Similarity']])
-            table_models.append(data)
+            pd_model = PandasTableModel(compute_association(model[1], word))
+            table_models.append(pd_model)
         return table_models
 
 
@@ -79,9 +105,8 @@ class BaseTableModel(QAbstractTableModel):
 
 
 class PandasTableModel(QAbstractTableModel):
-    def __init__(self, parent: QWidget,  data: pd.DataFrame):
-        super().__init__(parent)
-        self.test_data = [[0, 1], [2, 3], [4, 5], [6, 7]]
+    def __init__(self, data: pd.DataFrame):
+        super().__init__()
         self.raw_data = data
 
     def rowCount(self, parent=QModelIndex()):
@@ -102,7 +127,8 @@ class PandasTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
                 if section < len(self.raw_data.columns):
-                    return self.raw_data.columns[section]
+
+                    return self.raw_data.columns[section][0]
                 else:
                     return None
             return None

@@ -7,7 +7,8 @@ from PySide6 import QtCore
 from PySide6.QtCore import Slot, Qt, QAbstractTableModel, QModelIndex
 from PySide6.QtGui import QAction, QKeySequence, QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QGridLayout, QGroupBox, QLabel, QWidget, QLineEdit, \
-    QPushButton, QTabWidget, QVBoxLayout, QFileDialog, QStatusBar, QListView, QTableView
+    QPushButton, QTabWidget, QVBoxLayout, QFileDialog, QStatusBar, QListView, QTableView, QComboBox, QMessageBox, \
+    QHeaderView
 
 import BiasAnalyserCore
 from BiasAnalyserCore import BaseTableModel
@@ -69,18 +70,37 @@ class MainWindow(QMainWindow):
         geometry = self.screen().availableGeometry()
         self.setMinimumSize(geometry.width() * 0.6, geometry.height() * 0.6)
 
+    def show_message(self, main_text, detail_text=""):
+        message = QMessageBox()
+        message.setText(main_text)
+        message.setInformativeText(detail_text)
+        message.setWindowTitle("Popup")
+        message.setStandardButtons(QMessageBox.Ok)
+        message.exec()
+
     # Slots
     # TODO: Implement Model loading in a different module and then add the loaded model to a list of tuples
     #  with names + model
     @Slot()
-    def load_model(self, model_path, model_name, model_status, _id):
-        with self.wait_context():
-            model_status.setText("Loading Model")
-            QApplication.processEvents()
-            self.bias_analyser.load_model(_id, model_name.text(), model_path.text())
-            model_status.setText("Loaded {0} Model".format(model_name.text()))
-            pass
-        print(loaded_models)
+    def load_model(self, model_path, model_name, model_status, _id, combo_box):
+        if model_name.text() == "":
+            self.show_message("Please insert a Model Name")
+        else:
+            if combo_box.currentIndex() == -1:
+                self.show_message("Please select a Model Type")
+            elif 0 <= combo_box.currentIndex() <= 2:
+                with self.wait_context():
+                    model_status.setText("Loading Model")
+                    QApplication.processEvents()
+                    status = self.bias_analyser.load_model(_id, model_name.text(), model_path.text(),
+                                                           combo_box.currentIndex())
+                    if status is True:
+                        model_status.setText("Loaded {0} Model".format(model_name.text()))
+                    else:
+                        self.show_message(status)
+                print(loaded_models)
+            else:
+                self.show_message("Invalid Model Type")
 
     @Slot()
     def exit_app(self, checked):
@@ -121,17 +141,25 @@ class ModelBrowserWidget(QGroupBox):
         self.title_input = QLineEdit()
         self.title_input.setPlaceholderText("Model Name")
         self.load_button = QPushButton("Load")
-        self.status_label = QLabel("Status")
+        self.status_label = QLabel()
+
+        self.combo_box = QComboBox()
+        self.combo_box.setPlaceholderText("Select Model Type ...")
+        self.combo_box.addItem("Word2Vec .txt file")
+        self.combo_box.addItem("Word2Vec .bin file")
+        self.combo_box.addItem("Glove .txt file (Generates Word2Vec file in the same location)")
 
         self.filepath_button.clicked.connect(self.browse_file)
         self.load_button.clicked.connect(
-            lambda: self.parent.load_model(self.filepath_input, self.title_input, self.status_label, self.id))
+            lambda: self.parent.load_model(self.filepath_input, self.title_input, self.status_label, self.id,
+                                           self.combo_box))
 
         self.layout.addWidget(self.filepath_input, 0, 0)
         self.layout.addWidget(self.filepath_button, 0, 1)
         self.layout.addWidget(self.title_input, 1, 0)
         self.layout.addWidget(self.load_button, 1, 1)
-        self.layout.addWidget(self.status_label, 2, 0, 1, 2)
+        self.layout.addWidget(self.status_label, 2, 1)
+        self.layout.addWidget(self.combo_box, 2, 0)
 
         self.setLayout(self.layout)
 
@@ -152,21 +180,31 @@ class FirstAnalysisTab(QWidget):
     def __init__(self, parent: MainWindow):
         super().__init__(parent)
         self.parent = parent
+
+        self.main_layout = QGridLayout()
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self.compute_data)
-
-        self.main_layout = QVBoxLayout()
-        self.main_layout.addWidget(self.start_button)
+        self.main_layout.addWidget(self.start_button, 0, 1, 1, 1, alignment=Qt.AlignTop)
+        self.text_input = QLineEdit()
+        self.text_input.setPlaceholderText("Input Word")
+        self.main_layout.addWidget(self.text_input, 0, 0, 2, 1, alignment=Qt.AlignTop)
         self.setLayout(self.main_layout)
 
     @Slot()
     def compute_data(self):
-        model = BiasAnalyserCore.PandasTableModel(self, self.parent.bias_analyser.compute_association_model("strong")[0])
-        data_view = QTableView()
-        data_view.setModel(model)
-        self.main_layout.addWidget(data_view)
-        self.setLayout(self.main_layout)
+        models = self.parent.bias_analyser.compute_association_models(self.text_input.text())
 
+        # TODO: Insert models
+        for idx, model in enumerate(models):
+            label = QLabel()
+            label.setText(self.parent.bias_analyser.model_array[idx][0])
+            data_view = QTableView()
+            data_view.setModel(model)
+            data_view.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+            self.main_layout.addWidget(label, 1, idx)
+            self.main_layout.addWidget(data_view, 2, idx)
+
+        self.setLayout(self.main_layout)
 
 
 class SecondAnalysisTab(QWidget):
