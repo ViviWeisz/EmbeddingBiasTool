@@ -250,12 +250,27 @@ class SecondAnalysisTab(QWidget):
         self.top_box.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed))
         self.top_layout = QGridLayout()
         # self.top_layout.setSizeConstraint(QVBoxLayout.SetFixedSize)
+        self.word_a_input = QLineEdit()
+        self.word_a_input.setPlaceholderText("Word 1")
+        self.top_layout.addWidget(self.word_a_input, 0, 0, alignment=Qt.AlignTop)
+
+        self.to_label = QLabel("to")
+        self.top_layout.addWidget(self.to_label,0,1)
+
+        self.word_b_input = QLineEdit()
+        self.word_b_input.setPlaceholderText("Word 2")
+        self.top_layout.addWidget(self.word_b_input, 0, 2, alignment=Qt.AlignTop)
+
+        self.other_label = QLabel("is like ________ to")
+        self.top_layout.addWidget(self.other_label,0,3)
+
+        self.word_c_input = QLineEdit()
+        self.word_c_input.setPlaceholderText("Word 3")
+        self.top_layout.addWidget(self.word_c_input, 0, 4, alignment=Qt.AlignTop)
+
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self.compute_data)
-        self.top_layout.addWidget(self.start_button, 0, 1, 1, 1, alignment=Qt.AlignTop)
-        self.text_input = QLineEdit()
-        self.text_input.setPlaceholderText("Input Word")
-        self.top_layout.addWidget(self.text_input, 0, 0, 2, 1, alignment=Qt.AlignTop)
+        self.top_layout.addWidget(self.start_button, 0, 5, alignment=Qt.AlignTop)
         self.top_box.setLayout(self.top_layout)
 
         # Setup Output Box
@@ -272,7 +287,9 @@ class SecondAnalysisTab(QWidget):
 
     @Slot()
     def compute_data(self):
-        models = self.parent.bias_analyser.compute_association_models(self.text_input.text().lower())
+        models = self.parent.bias_analyser.compute_analogy_models(self.word_a_input.text().lower(),
+                                                                  self.word_c_input.text().lower(),
+                                                                  self.word_b_input.text().lower())
 
         for idx, model in enumerate(models):
             label = QLabel()

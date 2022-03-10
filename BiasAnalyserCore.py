@@ -24,6 +24,12 @@ def compute_association(model, word):
     return data
 
 
+def compute_analogy(model, positve_a, positve_b, negative_a):
+    data = pd.DataFrame(model.most_similar(negative=negative_a, positive=[positve_a, positve_b]),
+                        columns=[["Analogy", 'Similarity']])
+    return data
+
+
 class AnalyserCore:
     def __init__(self):
         self.model_array = []
@@ -63,6 +69,16 @@ class AnalyserCore:
         for model in self.model_array:
             try:
                 output = PandasTableModel(compute_association(model[1], word))
+            except KeyError as e:
+                output = str(e)
+            table_models.append(output)
+        return table_models
+
+    def compute_analogy_models(self, positive_a, positive_b, negative_a):
+        table_models = []
+        for model in self.model_array:
+            try:
+                output = PandasTableModel(compute_analogy(model[1], positive_a, positive_b, negative_a))
             except KeyError as e:
                 output = str(e)
             table_models.append(output)
