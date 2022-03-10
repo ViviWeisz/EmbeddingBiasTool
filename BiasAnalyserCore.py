@@ -61,8 +61,11 @@ class AnalyserCore:
     def compute_association_models(self, word):
         table_models = []
         for model in self.model_array:
-            pd_model = PandasTableModel(compute_association(model[1], word))
-            table_models.append(pd_model)
+            try:
+                output = PandasTableModel(compute_association(model[1], word))
+            except KeyError as e:
+                output = str(e)
+            table_models.append(output)
         return table_models
 
 
