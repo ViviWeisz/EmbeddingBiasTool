@@ -1,13 +1,13 @@
 import sys
-import time
+
 
 from contextlib import contextmanager
 
-from PySide6 import QtCore
-from PySide6.QtCore import Slot, Qt, QAbstractTableModel, QModelIndex
+
+from PySide6.QtCore import Slot, Qt
 from PySide6.QtGui import QAction, QKeySequence, QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QGridLayout, QGroupBox, QLabel, QWidget, QLineEdit, \
-    QPushButton, QTabWidget, QVBoxLayout, QFileDialog, QStatusBar, QListView, QTableView, QComboBox, QMessageBox, \
+    QPushButton, QTabWidget, QVBoxLayout, QFileDialog, QTableView, QComboBox, QMessageBox, \
     QHeaderView, QSizePolicy
 
 import BiasAnalyserCore
@@ -195,28 +195,7 @@ class AnalysisTab(QWidget):
         self.main_layout.addWidget(self.bot_box)
         self.setLayout(self.main_layout)
 
-
-# TODO: Implement different types of analysis:  Bias score,
-#  https://dl.acm.org/doi/pdf/10.1145/3351095.3372843#page=12&zoom=100,76,805
-# TODO: Refactor this to reuse a base class instead of building it from the ground up
-class AssociationAnalysisTab(AnalysisTab):
-    def __init__(self, parent: MainWindow):
-        super().__init__(parent)
-        self.parent = parent
-
-        # self.top_layout.setSizeConstraint(QVBoxLayout.SetFixedSize)
-        self.start_button = QPushButton("Start")
-        self.start_button.clicked.connect(self.compute_data)
-        self.top_layout.addWidget(self.start_button, 0, 1, 1, 1, alignment=Qt.AlignTop)
-        self.text_input = QLineEdit()
-        self.text_input.setPlaceholderText("Input Word")
-        self.top_layout.addWidget(self.text_input, 0, 0, 2, 1, alignment=Qt.AlignTop)
-        self.top_box.setLayout(self.top_layout)
-
-    @Slot()
-    def compute_data(self):
-        models = self.parent.bias_analyser.compute_association_models(self.text_input.text().lower())
-
+    def create_basic_table(self, models):
         for idx, model in enumerate(models):
             label = QLabel()
             label.setText(self.parent.bias_analyser.model_array[idx][0])
@@ -243,6 +222,30 @@ class AssociationAnalysisTab(AnalysisTab):
             self.bot_layout.setColumnStretch(idx, 1)
 
         self.setLayout(self.main_layout)
+
+
+# TODO: Implement different types of analysis:  Bias score,
+#  https://dl.acm.org/doi/pdf/10.1145/3351095.3372843#page=12&zoom=100,76,805
+# TODO: Refactor this to reuse a base class instead of building it from the ground up
+class AssociationAnalysisTab(AnalysisTab):
+    def __init__(self, parent: MainWindow):
+        super().__init__(parent)
+        self.parent = parent
+
+        # self.top_layout.setSizeConstraint(QVBoxLayout.SetFixedSize)
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.compute_data)
+        self.top_layout.addWidget(self.start_button, 0, 1, 1, 1, alignment=Qt.AlignTop)
+        self.text_input = QLineEdit()
+        self.text_input.setPlaceholderText("Input Word")
+        self.top_layout.addWidget(self.text_input, 0, 0, 2, 1, alignment=Qt.AlignTop)
+        self.top_box.setLayout(self.top_layout)
+
+    @Slot()
+    def compute_data(self):
+        models = self.parent.bias_analyser.compute_association_models(self.text_input.text().lower())
+
+        self.create_basic_table(models)
 
 
 class AnalogyAnalysisTab(AnalysisTab):
@@ -280,32 +283,7 @@ class AnalogyAnalysisTab(AnalysisTab):
                                                                   self.word_c_input.text().lower(),
                                                                   self.word_b_input.text().lower())
 
-        for idx, model in enumerate(models):
-            label = QLabel()
-            label.setText(self.parent.bias_analyser.model_array[idx][0])
-
-            if isinstance(model, str):
-                data_view = QLabel(model)
-
-            else:
-                data_view = QTableView()
-                data_view.setModel(model)
-                data_view.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-
-            if None is not self.bot_layout.itemAtPosition(0, idx):
-                self.bot_layout.itemAtPosition(0, idx).widget().hide()
-                self.bot_layout.removeItem(self.bot_layout.itemAtPosition(0, idx))
-
-            self.bot_layout.addWidget(label, 0, idx, alignment=Qt.AlignTop)
-
-            if None is not self.bot_layout.itemAtPosition(1, idx):
-                self.bot_layout.itemAtPosition(1, idx).widget().hide()
-                self.bot_layout.removeItem(self.bot_layout.itemAtPosition(1, idx))
-
-            self.bot_layout.addWidget(data_view, 1, idx)
-            self.bot_layout.setColumnStretch(idx, 1)
-
-        self.setLayout(self.main_layout)
+        self.create_basic_table(models)
 
 
 class ThirdAnalysisTab(AnalysisTab):
