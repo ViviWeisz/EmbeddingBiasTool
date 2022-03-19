@@ -11,7 +11,6 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QGridLayout, QGroupBox,
     QHeaderView, QSizePolicy
 
 import BiasAnalyserCore
-from BiasAnalyserCore import BaseTableModel
 
 loaded_models = []
 
@@ -50,8 +49,8 @@ class MainWindow(QMainWindow):
 
         # Tab Widget for different analysis types
         tab_widget = QTabWidget()
-        tab_widget.addTab(FirstAnalysisTab(self), "Association Analysis")
-        tab_widget.addTab(SecondAnalysisTab(self), "Analogy Analysis")
+        tab_widget.addTab(AssociationAnalysisTab(self), "Association Analysis")
+        tab_widget.addTab(AnalogyAnalysisTab(self), "Analogy Analysis")
         tab_widget.addTab(ThirdAnalysisTab(self), "Third Analysis")
 
         main_layout.addWidget(tab_widget, 1, 0, 3, 0)
@@ -79,8 +78,6 @@ class MainWindow(QMainWindow):
         message.exec()
 
     # Slots
-    # TODO: Implement Model loading in a different module and then add the loaded model to a list of tuples
-    #  with names + model
     @Slot()
     def load_model(self, model_path, model_name, model_status, _id, combo_box):
         if model_name.text() == "":
@@ -174,30 +171,21 @@ class ModelBrowserWidget(QGroupBox):
             print("FILE: " + dialog.selectedFiles()[0])
 
 
-# TODO: Implement different types of analysis: Association, Analogy, Bias score,
-#  https://dl.acm.org/doi/pdf/10.1145/3351095.3372843#page=12&zoom=100,76,805
-class FirstAnalysisTab(QWidget):
+class AnalysisTab(QWidget):
+
     def __init__(self, parent: MainWindow):
         super().__init__(parent)
         self.parent = parent
 
-        # Setup Input Box
+        # Create Input Box
         self.top_box = QGroupBox()
-        self.top_box.setTitle("Word Input")
+        self.top_box.setTitle("Input")
         self.top_box.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed))
         self.top_layout = QGridLayout()
-        # self.top_layout.setSizeConstraint(QVBoxLayout.SetFixedSize)
-        self.start_button = QPushButton("Start")
-        self.start_button.clicked.connect(self.compute_data)
-        self.top_layout.addWidget(self.start_button, 0, 1, 1, 1, alignment=Qt.AlignTop)
-        self.text_input = QLineEdit()
-        self.text_input.setPlaceholderText("Input Word")
-        self.top_layout.addWidget(self.text_input, 0, 0, 2, 1, alignment=Qt.AlignTop)
-        self.top_box.setLayout(self.top_layout)
 
         # Setup Output Box
         self.bot_box = QGroupBox()
-        self.bot_box.setTitle("Model Associations")
+        self.bot_box.setTitle("Output")
         self.bot_layout = QGridLayout()
         self.bot_box.setLayout(self.bot_layout)
 
@@ -206,6 +194,24 @@ class FirstAnalysisTab(QWidget):
         self.main_layout.addWidget(self.top_box)
         self.main_layout.addWidget(self.bot_box)
         self.setLayout(self.main_layout)
+
+
+# TODO: Implement different types of analysis:  Bias score,
+#  https://dl.acm.org/doi/pdf/10.1145/3351095.3372843#page=12&zoom=100,76,805
+# TODO: Refactor this to reuse a base class instead of building it from the ground up
+class AssociationAnalysisTab(AnalysisTab):
+    def __init__(self, parent: MainWindow):
+        super().__init__(parent)
+        self.parent = parent
+
+        # self.top_layout.setSizeConstraint(QVBoxLayout.SetFixedSize)
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.compute_data)
+        self.top_layout.addWidget(self.start_button, 0, 1, 1, 1, alignment=Qt.AlignTop)
+        self.text_input = QLineEdit()
+        self.text_input.setPlaceholderText("Input Word")
+        self.top_layout.addWidget(self.text_input, 0, 0, 2, 1, alignment=Qt.AlignTop)
+        self.top_box.setLayout(self.top_layout)
 
     @Slot()
     def compute_data(self):
@@ -239,30 +245,25 @@ class FirstAnalysisTab(QWidget):
         self.setLayout(self.main_layout)
 
 
-class SecondAnalysisTab(QWidget):
+class AnalogyAnalysisTab(AnalysisTab):
     def __init__(self, parent: MainWindow):
         super().__init__(parent)
         self.parent = parent
 
-        # Setup Input Box
-        self.top_box = QGroupBox()
-        self.top_box.setTitle("Analogy Input")
-        self.top_box.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed))
-        self.top_layout = QGridLayout()
         # self.top_layout.setSizeConstraint(QVBoxLayout.SetFixedSize)
         self.word_a_input = QLineEdit()
         self.word_a_input.setPlaceholderText("Word 1")
         self.top_layout.addWidget(self.word_a_input, 0, 0, alignment=Qt.AlignTop)
 
         self.to_label = QLabel("to")
-        self.top_layout.addWidget(self.to_label,0,1)
+        self.top_layout.addWidget(self.to_label, 0, 1)
 
         self.word_b_input = QLineEdit()
         self.word_b_input.setPlaceholderText("Word 2")
         self.top_layout.addWidget(self.word_b_input, 0, 2, alignment=Qt.AlignTop)
 
         self.other_label = QLabel("is like ________ to")
-        self.top_layout.addWidget(self.other_label,0,3)
+        self.top_layout.addWidget(self.other_label, 0, 3)
 
         self.word_c_input = QLineEdit()
         self.word_c_input.setPlaceholderText("Word 3")
@@ -272,18 +273,6 @@ class SecondAnalysisTab(QWidget):
         self.start_button.clicked.connect(self.compute_data)
         self.top_layout.addWidget(self.start_button, 0, 5, alignment=Qt.AlignTop)
         self.top_box.setLayout(self.top_layout)
-
-        # Setup Output Box
-        self.bot_box = QGroupBox()
-        self.bot_box.setTitle("Model Analogies")
-        self.bot_layout = QGridLayout()
-        self.bot_box.setLayout(self.bot_layout)
-
-        # Setup Main Layout
-        self.main_layout = QVBoxLayout()
-        self.main_layout.addWidget(self.top_box)
-        self.main_layout.addWidget(self.bot_box)
-        self.setLayout(self.main_layout)
 
     @Slot()
     def compute_data(self):
@@ -319,13 +308,9 @@ class SecondAnalysisTab(QWidget):
         self.setLayout(self.main_layout)
 
 
-class ThirdAnalysisTab(QWidget):
-    def __init__(self, parent: QWidget):
+class ThirdAnalysisTab(AnalysisTab):
+    def __init__(self, parent: MainWindow):
         super().__init__(parent)
-        placeholder_label = QLabel("Placeholder Label")
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(placeholder_label)
-        self.setLayout(main_layout)
 
 
 if __name__ == "__main__":

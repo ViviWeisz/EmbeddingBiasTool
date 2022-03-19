@@ -24,8 +24,8 @@ def compute_association(model, word):
     return data
 
 
-def compute_analogy(model, positve_a, positve_b, negative_a):
-    data = pd.DataFrame(model.most_similar(negative=negative_a, positive=[positve_a, positve_b]),
+def compute_analogy(model, positive_a, positive_b, negative_a):
+    data = pd.DataFrame(model.most_similar(negative=negative_a, positive=[positive_a, positive_b]),
                         columns=[["Analogy", 'Similarity']])
     return data
 
@@ -34,7 +34,6 @@ class AnalyserCore:
     def __init__(self):
         self.model_array = []
 
-    # TODO: Think of alternatives for fast loading and implement loading of different file types besides word2vec.txt
     # Returns True if successful and a Message to display on Error
     def load_model(self, index, name, path, model_type):
         _limit = 50000
