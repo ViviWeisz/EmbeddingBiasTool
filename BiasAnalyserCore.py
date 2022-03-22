@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+from numpy.linalg import norm
+from scipy.spatial.distance import cosine
+import csv
 import os
 
 import gensim
@@ -28,6 +31,66 @@ def compute_analogy(model, positive_a, positive_b, negative_a):
     data = pd.DataFrame(model.most_similar(negative=negative_a, positive=[positive_a, positive_b]),
                         columns=[["Analogy", 'Similarity']])
     return data
+
+
+def load_group_words(bias_type):
+    with open("group_words.csv", "r") as filehandle:
+        csvreader = csv.reader(filehandle)
+        rows = []
+        for row in csvreader:
+            rows.append(row)
+    g1 = rows[bias_type*2]
+    g2 = rows[bias_type*2+1]
+    return g1, g2
+
+
+def make_neutral_words():
+    with open("neutral_words.csv", "r") as filehandle:
+        csvreader = csv.reader(filehandle)
+        rows = []
+        for row in csvreader:
+            rows.append(row)
+    return rows
+
+
+def compute_group_vector(model, group, dimension):
+    group_vector = np.zeros((dimension,), dtype=float)
+    for w in group:
+        w = w.strip()
+        if w not in model:
+            continue
+        w_vec = model[w] / norm(model[w])
+        group_vector = np.add(group_vector, w_vec)
+    return group_vector
+
+
+def compute_group_vectors(model: KeyedVectors, bias_type):
+    g1, g2, = load_group_words(bias_type)
+    dimension = model.vector_size
+    g1_vec = compute_group_vector(model, g1, dimension)
+    g2_vec = compute_group_vector(model, g2, dimension)
+    g1_vec, g2_vec = g1_vec / norm(g1_vec), g2_vec / norm(g2_vec)
+    return g1_vec, g2_vec
+
+
+def compute_bias_score(model, bias_type):
+    neutral_words = make_neutral_words()
+    g1_vec, g2_vec = compute_group_vectors(model, bias_type)
+    categories = ["Profession", "Physical Appearance", "Extremism", "Personality"]
+    bias = []
+    for words in neutral_words:
+        bias_score = 0
+        count = 0
+        for word in words:
+            if model.has_index_for(word.lower()) is not True:
+                continue
+            bias_score += abs(cosine(g1_vec, model[word.lower()]) - cosine(g2_vec, model[word.lower()]))
+            count += 1
+        bias_score = bias_score / count
+        bias.append(bias_score)
+    d = {"Category": categories, "Bias": bias}
+    df = pd.DataFrame(data=d)
+    return df
 
 
 class AnalyserCore:
@@ -80,6 +143,13 @@ class AnalyserCore:
                 output = PandasTableModel(compute_analogy(model[1], positive_a, positive_b, negative_a))
             except KeyError as e:
                 output = str(e)
+            table_models.append(output)
+        return table_models
+
+    def compute_bias_score_model(self, bias_type):
+        table_models = []
+        for model in self.model_array:
+            output = PandasTableModel(compute_bias_score(model[1], bias_type))
             table_models.append(output)
         return table_models
 
@@ -145,7 +215,8 @@ class PandasTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
                 if section < len(self.raw_data.columns):
-
+                    if isinstance(self.raw_data.columns[section], str):
+                        return self.raw_data.columns[section]
                     return self.raw_data.columns[section][0]
                 else:
                     return None

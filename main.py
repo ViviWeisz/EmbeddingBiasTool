@@ -1,14 +1,12 @@
 import sys
 
-
 from contextlib import contextmanager
-
 
 from PySide6.QtCore import Slot, Qt
 from PySide6.QtGui import QAction, QKeySequence, QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QGridLayout, QGroupBox, QLabel, QWidget, QLineEdit, \
     QPushButton, QTabWidget, QVBoxLayout, QFileDialog, QTableView, QComboBox, QMessageBox, \
-    QHeaderView, QSizePolicy
+    QHeaderView, QSizePolicy, QRadioButton
 
 import BiasAnalyserCore
 
@@ -51,7 +49,7 @@ class MainWindow(QMainWindow):
         tab_widget = QTabWidget()
         tab_widget.addTab(AssociationAnalysisTab(self), "Association Analysis")
         tab_widget.addTab(AnalogyAnalysisTab(self), "Analogy Analysis")
-        tab_widget.addTab(ThirdAnalysisTab(self), "Third Analysis")
+        tab_widget.addTab(GroupBiasAnalysisTab(self), "Group Bias Analysis")
 
         main_layout.addWidget(tab_widget, 1, 0, 3, 0)
 
@@ -286,9 +284,41 @@ class AnalogyAnalysisTab(AnalysisTab):
         self.create_basic_table(models)
 
 
-class ThirdAnalysisTab(AnalysisTab):
+class GroupBiasAnalysisTab(AnalysisTab):
     def __init__(self, parent: MainWindow):
         super().__init__(parent)
+
+        self.gender_button = QRadioButton("Gender")
+        self.gender_button.setChecked(True)
+        self.race_button = QRadioButton("Race")
+        self.religion_button = QRadioButton("Religion")
+        self.economic_button = QRadioButton("Economic")
+        self.bias_selection_layout = QVBoxLayout()
+        self.bias_selection_layout.addWidget(self.gender_button)
+        self.bias_selection_layout.addWidget(self.race_button)
+        self.bias_selection_layout.addWidget(self.religion_button)
+        self.bias_selection_layout.addWidget(self.economic_button)
+        self.top_layout.addLayout(self.bias_selection_layout, 0, 0)
+
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.compute_data)
+        self.top_layout.addWidget(self.start_button, 0, 1, alignment=Qt.AlignTop)
+        self.top_box.setLayout(self.top_layout)
+
+    @Slot()
+    def compute_data(self):
+        bias_type = "gender"
+        if self.gender_button.isChecked():
+            bias_type = 0
+        elif self.race_button.isChecked():
+            bias_type = 1
+        elif self.religion_button.isChecked():
+            bias_type = 2
+        elif self.economic_button.isChecked():
+            bias_type = 3
+
+        models = self.parent.bias_analyser.compute_bias_score_model(bias_type)
+        self.create_basic_table(models)
 
 
 if __name__ == "__main__":
