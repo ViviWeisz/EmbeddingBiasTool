@@ -39,8 +39,8 @@ def load_group_words(bias_type):
         rows = []
         for row in csvreader:
             rows.append(row)
-    g1 = rows[bias_type*2]
-    g2 = rows[bias_type*2+1]
+    g1 = rows[bias_type * 2]
+    g2 = rows[bias_type * 2 + 1]
     return g1, g2
 
 
@@ -152,44 +152,6 @@ class AnalyserCore:
             output = PandasTableModel(compute_bias_score(model[1], bias_type))
             table_models.append(output)
         return table_models
-
-
-class BaseTableModel(QAbstractTableModel):
-    def __init__(self, parent: QWidget, horizontal_header, vertical_header, data):
-        super().__init__(parent)
-        self.test_data = [[0, 1], [2, 3], [4, 5], [6, 7]]
-        self.raw_data = data
-        self.horizontal_header = horizontal_header
-        self.vertical_header = vertical_header
-
-    def rowCount(self, parent=QModelIndex()):
-        return len(self.test_data)
-
-    def columnCount(self, parent=QModelIndex()):
-        return len(self.test_data[0])
-
-    def data(self, index, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            row = index.row()
-            column = index.column()
-            return '{0}'.format(self.test_data[row][column])
-        else:
-            return None
-
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            if orientation == Qt.Horizontal:
-                if section < len(self.horizontal_header):
-                    return self.horizontal_header[section]
-                else:
-                    return None
-            elif orientation == Qt.Vertical:
-                if section < len(self.vertical_header):
-                    return self.vertical_header[section]
-                else:
-                    return None
-            return None
-        return None
 
 
 class PandasTableModel(QAbstractTableModel):
