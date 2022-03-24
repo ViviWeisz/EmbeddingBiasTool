@@ -6,7 +6,7 @@ from PySide6.QtCore import Slot, Qt
 from PySide6.QtGui import QAction, QKeySequence, QCursor
 from PySide6.QtWidgets import QApplication, QMainWindow, QGridLayout, QGroupBox, QLabel, QWidget, QLineEdit, \
     QPushButton, QTabWidget, QVBoxLayout, QFileDialog, QTableView, QComboBox, QMessageBox, \
-    QHeaderView, QSizePolicy, QRadioButton
+    QHeaderView, QSizePolicy, QRadioButton, QCheckBox
 
 import BiasAnalyserCore
 
@@ -222,15 +222,11 @@ class AnalysisTab(QWidget):
         self.setLayout(self.main_layout)
 
 
-# TODO: Implement different types of analysis:  Bias score,
-#  https://dl.acm.org/doi/pdf/10.1145/3351095.3372843#page=12&zoom=100,76,805
-# TODO: Refactor this to reuse a base class instead of building it from the ground up
 class AssociationAnalysisTab(AnalysisTab):
     def __init__(self, parent: MainWindow):
         super().__init__(parent)
         self.parent = parent
 
-        # self.top_layout.setSizeConstraint(QVBoxLayout.SetFixedSize)
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self.compute_data)
         self.top_layout.addWidget(self.start_button, 0, 1, 1, 1, alignment=Qt.AlignTop)
@@ -251,7 +247,6 @@ class AnalogyAnalysisTab(AnalysisTab):
         super().__init__(parent)
         self.parent = parent
 
-        # self.top_layout.setSizeConstraint(QVBoxLayout.SetFixedSize)
         self.word_a_input = QLineEdit()
         self.word_a_input.setPlaceholderText("Word 1")
         self.top_layout.addWidget(self.word_a_input, 0, 0, alignment=Qt.AlignTop)
@@ -298,11 +293,18 @@ class GroupBiasAnalysisTab(AnalysisTab):
         self.bias_selection_layout.addWidget(self.race_button)
         self.bias_selection_layout.addWidget(self.religion_button)
         self.bias_selection_layout.addWidget(self.economic_button)
-        self.top_layout.addLayout(self.bias_selection_layout, 0, 0)
+        self.top_layout.addLayout(self.bias_selection_layout, 0, 0, 4, 1)
+
+        self.normalize_check = QCheckBox("Normalized")
+        self.top_layout.addWidget(self.normalize_check, 2,1,1,1)
+
+        self.category_check = QCheckBox("Limit to categories")
+        self.category_check.setChecked(True)
+        self.top_layout.addWidget(self.category_check, 1, 1, 1, 1)
 
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self.compute_data)
-        self.top_layout.addWidget(self.start_button, 0, 1, alignment=Qt.AlignTop)
+        self.top_layout.addWidget(self.start_button, 3, 1, 1, 1, alignment=Qt.AlignTop)
         self.top_box.setLayout(self.top_layout)
 
     @Slot()
@@ -317,7 +319,9 @@ class GroupBiasAnalysisTab(AnalysisTab):
         elif self.economic_button.isChecked():
             bias_type = 3
 
-        models = self.parent.bias_analyser.compute_bias_score_model(bias_type)
+        category = self.category_check.isChecked()
+        normalize = self.normalize_check.isChecked()
+        models = self.parent.bias_analyser.compute_bias_score_model(bias_type, normalize, category)
         self.create_basic_table(models)
 
 

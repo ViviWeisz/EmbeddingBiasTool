@@ -3,23 +3,11 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.spatial.distance import cosine
 import csv
-import os
 
-import gensim
 from gensim.models import KeyedVectors
-from gensim.models import Word2Vec
 from gensim.scripts.glove2word2vec import glove2word2vec
-from gensim.test.utils import datapath, get_tmpfile
 
-# new_model = gensim.models.Word2Vec.load(r'D:\Uni\Bachelor\Datasets\GoogleNews-vectors-negative300.bin')
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
-from PySide6.QtWidgets import QWidget
-
-
-# print("Start Loading")
-# new_model_tuple = ("test", word2vec.KeyedVectors.load_word2vec_format(
-#    r'D:\Uni\Bachelor\Datasets\GoogleNews-vectors-negative300.bin', binary=True))
-# print("Finished Loading")
 
 
 def compute_association(model, word):
@@ -73,7 +61,7 @@ def compute_group_vectors(model: KeyedVectors, bias_type):
     return g1_vec, g2_vec
 
 
-def compute_bias_score(model, bias_type):
+def compute_bias_score(model: KeyedVectors, bias_type, normalized, category):
     neutral_words = make_neutral_words()
     g1_vec, g2_vec = compute_group_vectors(model, bias_type)
     categories = ["Profession", "Physical Appearance", "Extremism", "Personality"]
@@ -87,7 +75,23 @@ def compute_bias_score(model, bias_type):
             bias_score += abs(cosine(g1_vec, model[word.lower()]) - cosine(g2_vec, model[word.lower()]))
             count += 1
         bias_score = bias_score / count
+        # Normalizes the score to the distance of the 2 groups
+        if normalized:
+            bias_score = bias_score / cosine(g1_vec, g2_vec)
         bias.append(bias_score)
+    if category is not True:
+        bias_score = 0
+        count = len(model.index_to_key)
+        for word in model.key_to_index:
+            if model.has_index_for(word.lower()) is not True:
+                continue
+            bias_score += abs(cosine(g1_vec, model[word.lower()]) - cosine(g2_vec, model[word.lower()]))
+        bias_score = bias_score / count
+        # Normalizes the score to the distance of the 2 groups
+        if normalized:
+            bias_score = bias_score / cosine(g1_vec, g2_vec)
+        bias.append(bias_score)
+        categories.append("All Words")
     d = {"Category": categories, "Bias": bias}
     df = pd.DataFrame(data=d)
     return df
@@ -114,7 +118,6 @@ class AnalyserCore:
                 glove2word2vec(path, output_path)
                 model = KeyedVectors.load_word2vec_format(output_path, binary=False, limit=_limit)
             else:
-                print("State 1")
                 return "Unimplemented Model Type"
             if index < len(self.model_array):
                 del self.model_array[index]
@@ -146,10 +149,10 @@ class AnalyserCore:
             table_models.append(output)
         return table_models
 
-    def compute_bias_score_model(self, bias_type):
+    def compute_bias_score_model(self, bias_type, normalized, category):
         table_models = []
         for model in self.model_array:
-            output = PandasTableModel(compute_bias_score(model[1], bias_type))
+            output = PandasTableModel(compute_bias_score(model[1], bias_type, normalized, category))
             table_models.append(output)
         return table_models
 
