@@ -10,8 +10,6 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QGridLayout, QGroupBox,
 
 import BiasAnalyserCore
 
-loaded_models = []
-
 
 # Uses QMainWindow to create the main window
 class MainWindow(QMainWindow):
@@ -93,7 +91,6 @@ class MainWindow(QMainWindow):
                         model_status.setText("Loaded {0} Model".format(model_name.text()))
                     else:
                         self.show_message(status)
-                print(loaded_models)
             else:
                 self.show_message("Invalid Model Type")
 
@@ -251,30 +248,33 @@ class AnalogyAnalysisTab(AnalysisTab):
         self.word_a_input.setPlaceholderText("Word 1")
         self.top_layout.addWidget(self.word_a_input, 0, 0, alignment=Qt.AlignTop)
 
-        self.to_label = QLabel("to")
+        self.to_label = QLabel("is to")
         self.top_layout.addWidget(self.to_label, 0, 1)
 
         self.word_b_input = QLineEdit()
         self.word_b_input.setPlaceholderText("Word 2")
         self.top_layout.addWidget(self.word_b_input, 0, 2, alignment=Qt.AlignTop)
 
-        self.other_label = QLabel("is like ________ to")
+        self.other_label = QLabel("as")
         self.top_layout.addWidget(self.other_label, 0, 3)
 
         self.word_c_input = QLineEdit()
         self.word_c_input.setPlaceholderText("Word 3")
         self.top_layout.addWidget(self.word_c_input, 0, 4, alignment=Qt.AlignTop)
 
+        self.other_label = QLabel("is to ...")
+        self.top_layout.addWidget(self.other_label, 0, 5)
+
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self.compute_data)
-        self.top_layout.addWidget(self.start_button, 0, 5, alignment=Qt.AlignTop)
+        self.top_layout.addWidget(self.start_button, 0, 6, alignment=Qt.AlignTop)
         self.top_box.setLayout(self.top_layout)
 
     @Slot()
     def compute_data(self):
-        models = self.parent.bias_analyser.compute_analogy_models(self.word_a_input.text().lower(),
+        models = self.parent.bias_analyser.compute_analogy_models(self.word_b_input.text().lower(),
                                                                   self.word_c_input.text().lower(),
-                                                                  self.word_b_input.text().lower())
+                                                                  self.word_a_input.text().lower())
 
         self.create_basic_table(models)
 
@@ -296,7 +296,7 @@ class GroupBiasAnalysisTab(AnalysisTab):
         self.top_layout.addLayout(self.bias_selection_layout, 0, 0, 4, 1)
 
         self.normalize_check = QCheckBox("Normalized")
-        self.top_layout.addWidget(self.normalize_check, 2,1,1,1)
+        self.top_layout.addWidget(self.normalize_check, 2, 1, 1, 1)
 
         self.category_check = QCheckBox("Limit to categories")
         self.category_check.setChecked(True)
