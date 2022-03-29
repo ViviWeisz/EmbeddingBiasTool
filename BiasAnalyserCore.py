@@ -64,7 +64,7 @@ def compute_group_vectors(model: KeyedVectors, bias_type):
 def compute_bias_score(model: KeyedVectors, bias_type, normalized, category):
     neutral_words = make_neutral_words()
     g1_vec, g2_vec = compute_group_vectors(model, bias_type)
-    categories = ["Profession", "Physical Appearance", "Extremism", "Personality"]
+    categories = ["Profession", "Physical Appearance", "Extremism", "Personality", "Cultivation"]
     bias = []
     for words in neutral_words:
         bias_score = 0
