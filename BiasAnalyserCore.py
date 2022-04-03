@@ -101,7 +101,7 @@ class AnalyserCore:
     def __init__(self):
         self.model_array = []
 
-    # Returns True if successful and a Message to display on Error
+    # Returns True if successful or a Message to display on Error when not working
     def load_model(self, index, name, path, model_type):
         _limit = 200000
         try:
