@@ -19,7 +19,7 @@ python3 main.py
 ```
 or
 ```bash
-python3 main.py
+python main.py
 ```
 ## Usage
 

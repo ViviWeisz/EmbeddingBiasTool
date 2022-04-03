@@ -159,11 +159,9 @@ class ModelBrowserWidget(QGroupBox):
     def browse_file(self):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.ExistingFile)
-        dialog.setDirectory(r"D:\Uni\Bachelor\Datasets")
         dialog.setNameFilter("Models (*.model *.txt *.npy *.bin)")
         if dialog.exec():
             self.filepath_input.setText(dialog.selectedFiles()[0])
-            print("FILE: " + dialog.selectedFiles()[0])
 
 
 class AnalysisTab(QWidget):
