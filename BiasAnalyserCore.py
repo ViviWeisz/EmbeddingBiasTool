@@ -9,6 +9,9 @@ from gensim.scripts.glove2word2vec import glove2word2vec
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 
+# Limit for model loading
+model_limit = None
+
 
 def compute_association(model, word):
     data = pd.DataFrame(model.most_similar(positive=word), columns=[[word, 'Similarity']])
@@ -103,7 +106,7 @@ class AnalyserCore:
 
     # Returns True if successful or a Message to display on Error when not working
     def load_model(self, index, name, path, model_type):
-        _limit = 200000
+        _limit = model_limit
         try:
             # Word2Vec Plaintext
             if model_type == 0:
