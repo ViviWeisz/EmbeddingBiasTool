@@ -103,7 +103,7 @@ class AnalyserCore:
 
     # Returns True if successful and a Message to display on Error
     def load_model(self, index, name, path, model_type):
-        _limit = 50000
+        _limit = 200000
         try:
             # Word2Vec Plaintext
             if model_type == 0:
