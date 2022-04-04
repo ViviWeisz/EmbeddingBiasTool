@@ -31,5 +31,11 @@ By default, the tool will load the entire models, which takes a long time. To sp
 model_limit = 200000
 ```
 
+List of example embeddings:
+- [Google News Vectors](https://code.google.com/archive/p/word2vec/)
+- [GloVe Embeddings](https://nlp.stanford.edu/projects/glove/)
+- [Google News Debiased](https://github.com/tolga-b/debiaswe)
+
+
 ## License
 [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)
